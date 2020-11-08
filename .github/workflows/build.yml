@@ -1,0 +1,29 @@
+name: Build
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    name: Library Build
+
+    runs-on: ubuntu-latest
+    container: devkitpro/devkita64:latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Make
+      run: |
+          source /etc/profile.d/devkit-env.sh
+          export PATH=${PATH}:${DEVKITPRO}/portlibs/switch/bin
+          make -j$(nproc)
+          find .
