@@ -12,14 +12,17 @@ defaults:
 
 jobs:
   build:
-    name: Library Build
+    name: Build
 
     runs-on: ubuntu-latest
     container: devkitpro/devkita64:latest
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v1
+      with:
+        submodules: recursive
+
 
     - name: Make
       run: |
@@ -27,3 +30,37 @@ jobs:
           export PATH=${PATH}:${DEVKITPRO}/portlibs/switch/bin
           make -j$(nproc)
           find .
+
+    - name: tar
+      run: |
+          tar cvaf out.tar.zst out/
+
+
+    - name: Delete
+      uses: dev-drprasad/delete-older-releases@v0.1.0
+      with:
+        keep_latest: 0
+        delete_tags: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: latest
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false
+    - name: Upload Release Asset
+      id: upload-release-asset 
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }} 
+        asset_path: out.tar.zst
+        asset_name: out.tar.zst
+        asset_content_type: application/octet-stream
